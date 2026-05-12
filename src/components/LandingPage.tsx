@@ -66,12 +66,11 @@ export default function LandingPage() {
             <div className="flex flex-col md:flex-row gap-4 justify-center items-center pt-8">
               <button 
                 onClick={handleLogin}
-                className="flex items-center gap-3 bg-white text-on-background border border-outline-variant px-8 py-4 rounded-full font-bold shadow-sm hover:shadow-md active:scale-95 transition-all"
+                className="cursor-pointer flex items-center gap-3 bg-white text-on-background border border-outline-variant px-8 py-4 rounded-full font-bold shadow-sm hover:shadow-md active:scale-95 transition-all"
               >
-                <img alt="Google" className="w-5 h-5" src="https://lh3.googleusercontent.com/yUzS6y_08xW_S7mXv2Vd_F4U8p9fG_0pG_1_Q8_1_Q8_1_Q8_1_Q8_1_Q8_1_Q8_1_Q8_1_Q8_1_Q8" />
-                <span>Login with Google</span>
+              <span>Login with Google</span>
               </button>
-              <button className="text-primary font-bold px-8 py-4 rounded-full hover:bg-primary-fixed/20 transition-all">
+              <button className="cursor-pointer text-primary font-bold px-8 py-4 rounded-full hover:bg-primary-fixed/20 transition-all">
                 Explore Features
               </button>
             </div>
@@ -166,7 +165,7 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="max-w-7xl mx-auto mt-16 pt-8 border-t border-outline-variant/30 flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-xs text-outline">© 2024 googlechat.io. All rights reserved.</p>
+            <a href="#" className="text-xs text-outline">© 2024 Sazid Hasasn</a>
           </div>
         </footer>
       </main>

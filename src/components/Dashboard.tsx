@@ -95,7 +95,7 @@ export default function Dashboard() {
                 )}
                 <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-secondary rounded-full border-2 border-white"></div>
               </div>
-              <div className="flex-1 text-left">
+              <div className="cursor-pointer flex-1 text-left">
                 <p className="text-sm truncate">{u.displayName}</p>
                 <p className="text-[10px] text-outline truncate">{u.email}</p>
               </div>
@@ -116,7 +116,7 @@ export default function Dashboard() {
                 setActiveView(item.id as View);
                 if (item.id !== 'chat') setSelectedUser(null);
               }}
-              className={`flex items-center gap-4 px-4 py-2 rounded-full transition-all ${
+              className={`cursor-pointer flex items-center gap-4 px-4 py-2 rounded-full transition-all ${
                 activeView === item.id && !selectedUser
                 ? 'bg-secondary-container text-on-secondary-container font-bold' 
                 : 'text-on-surface-variant hover:bg-surface-container-high'
@@ -128,7 +128,7 @@ export default function Dashboard() {
           ))}
           <button
             onClick={() => setActiveView('settings')}
-            className={`flex items-center gap-4 px-4 py-2 rounded-full transition-all ${
+            className={`cursor-pointer flex items-center gap-4 px-4 py-2 rounded-full transition-all ${
               activeView === 'settings' 
               ? 'bg-secondary-container text-on-secondary-container font-bold' 
               : 'text-on-surface-variant hover:bg-surface-container-high'
@@ -139,7 +139,7 @@ export default function Dashboard() {
           </button>
           <button 
             onClick={handleLogout}
-            className="flex items-center gap-4 px-4 py-2 text-error hover:bg-error-container/20 transition-all rounded-full mt-2"
+            className="cursor-pointer flex items-center gap-4 px-4 py-2 text-error hover:bg-error-container/20 transition-all rounded-full mt-2"
           >
             <LogOut className="w-5 h-5" />
             <span className="text-sm">Logout</span>
