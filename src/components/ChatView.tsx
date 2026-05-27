@@ -12,6 +12,7 @@ import {
 import { io, Socket } from "socket.io-client";
 import { useApp } from "../contexts/AppContext";
 import { Message, User } from "../types";
+import { VideoCallBridge } from '../components/video-call/VideoCallBridge';
 
 import { db } from "./../lib/firebase";
 
@@ -38,7 +39,7 @@ export default function ChatView({
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // ROOM ID
+  // ROOM ID GENERATION
   const getRoomId = (uid1: string, uid2: string) => {
     return [uid1, uid2].sort().join("_");
   };
@@ -47,10 +48,23 @@ export default function ChatView({
     ? getRoomId(user.uid, recipient.uid)
     : recipient.uid;
 
-  // =========================
-  // LOAD FIREBASE MESSAGES
-  // =========================
+  // =======================================================================
+  // ⚡ VIDEO CALL CORE ENGINE TRIGGER PIPELINE (CONNECTED DIRECT TO BRIDGE)
+  // =======================================================================
+  const executeCallPipeline = () => {
+    if (!roomId) return;
+    const channelName = `call_${roomId}`;
+    
+    // Broadcast dispatch to alert active listeners dynamically across file systems
+    const event = new CustomEvent('EXECUTE_VIDEO_CALL_BACKEND', {
+      detail: { channelName }
+    });
+    window.dispatchEvent(event);
+  };
 
+  // =========================
+  // LOAD FIREBASE MESSAGES & SOCKET PIPELINE
+  // =========================
   useEffect(() => {
     if (!user) return;
 
@@ -74,11 +88,9 @@ export default function ChatView({
       );
     });
 
-    // SOCKET
+    // SOCKET INITIALIZATION CONFIGURATION (Using proxy node pipeline reference)
     const newSocket = io();
-
     setSocket(newSocket);
-
     newSocket.emit("join-room", roomId);
 
     return () => {
@@ -97,7 +109,6 @@ export default function ChatView({
   // =========================
   // SEND MESSAGE
   // =========================
-
   const handleSend = async () => {
     if (!inputText.trim() || !user) return;
 
@@ -111,33 +122,21 @@ export default function ChatView({
     };
 
     try {
-
-      // =========================
       // SAVE RECENT CHAT HISTORY
-      // =========================
-
       const recentChats = JSON.parse(
-        localStorage.getItem(
-          `recent_chats_${user.uid}`
-        ) || "[]"
+        localStorage.getItem(`recent_chats_${user.uid}`) || "[]"
       );
 
       const updatedRecentChats = [
         {
           uid: recipient.uid,
-          name:
-            recipient.displayName || "Unknown User",
+          name: recipient.displayName || "Unknown User",
           photoURL: recipient.photoURL || "",
           lastMessage: inputText,
           lastTime: new Date().toLocaleString(),
           online: true,
         },
-
-        // REMOVE DUPLICATE
-        ...recentChats.filter(
-          (chat: any) =>
-            chat.uid !== recipient.uid
-        ),
+        ...recentChats.filter((chat: any) => chat.uid !== recipient.uid),
       ];
 
       localStorage.setItem(
@@ -145,19 +144,10 @@ export default function ChatView({
         JSON.stringify(updatedRecentChats)
       );
 
-      // =========================
       // SAVE FIREBASE MESSAGE
-      // =========================
+      await addDoc(collection(db, "messages"), messageData);
 
-      await addDoc(
-        collection(db, "messages"),
-        messageData
-      );
-
-      // =========================
-      // SOCKET SEND
-      // =========================
-
+      // SOCKET MESSAGE EMIT
       if (socket) {
         socket.emit("send-message", {
           room: roomId,
@@ -166,12 +156,8 @@ export default function ChatView({
       }
 
       setInputText("");
-
     } catch (error) {
-      console.error(
-        "Message could not be sent:",
-        error
-      );
+      console.error("Message could not be sent:", error);
     }
   };
 
@@ -183,11 +169,8 @@ export default function ChatView({
 
         {/* HEADER */}
         <header className="h-16 flex items-center justify-between px-6 border-b border-outline-variant/10 bg-white">
-
           <div className="flex items-center gap-3">
-
             <div className="relative">
-
               {recipient.photoURL ? (
                 <img
                   src={recipient.photoURL}
@@ -196,11 +179,9 @@ export default function ChatView({
                 />
               ) : (
                 <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-on-primary text-sm font-bold">
-                  {recipient.displayName?.charAt(0) ||
-                    recipient.email?.charAt(0)}
+                  {recipient.displayName?.charAt(0) || recipient.email?.charAt(0)}
                 </div>
               )}
-
               <div className="absolute bottom-0 right-0 w-3 h-3 bg-secondary rounded-full border-2 border-white"></div>
             </div>
 
@@ -208,7 +189,6 @@ export default function ChatView({
               <h2 className="text-sm font-bold leading-tight text-on-surface">
                 {recipient.displayName}
               </h2>
-
               <span className="text-[10px] text-secondary font-medium">
                 Active now
               </span>
@@ -216,12 +196,15 @@ export default function ChatView({
           </div>
 
           <div className="flex items-center gap-2">
-
             <button className="p-2 rounded-full hover:bg-surface-container transition">
               <Search className="w-5 h-5 text-on-surface-variant" />
             </button>
 
-            <button className="p-2 rounded-full hover:bg-surface-container transition">
+            {/* 🔥 APNAR EXACT BUTTON - DESIGN REMAINS 100% UNTOUCHED WITH ACTION PIPELINE INTEGRATION */}
+            <button 
+              onClick={executeCallPipeline}
+              className="p-2 rounded-full hover:bg-surface-container transition"
+            >
               <Video className="w-5 h-5 text-on-surface-variant" />
             </button>
 
@@ -235,14 +218,11 @@ export default function ChatView({
 
         {/* MESSAGES */}
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4 bg-[#f8fafc]">
-
           {messages.length === 0 && (
             <div className="flex flex-col items-center justify-center h-full opacity-60 text-center">
-
               <div className="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center mb-4 shadow-sm">
                 <Send className="w-7 h-7 text-primary" />
               </div>
-
               <p className="text-sm font-semibold text-on-surface">
                 Say hello to {recipient.displayName}!
               </p>
@@ -253,13 +233,10 @@ export default function ChatView({
             <div
               key={ms.id}
               className={`flex ${
-                ms.senderId === user?.uid
-                  ? "justify-end"
-                  : "justify-start"
+                ms.senderId === user?.uid ? "justify-end" : "justify-start"
               }`}
             >
               <div className="flex flex-col max-w-[80%]">
-
                 <div
                   className={`px-4 py-2.5 rounded-2xl shadow-sm ${
                     ms.senderId === user?.uid
@@ -274,14 +251,10 @@ export default function ChatView({
 
                 <span
                   className={`text-[10px] mt-1 px-1 text-outline ${
-                    ms.senderId === user?.uid
-                      ? "text-right"
-                      : "text-left"
+                    ms.senderId === user?.uid ? "text-right" : "text-left"
                   }`}
                 >
-                  {new Date(
-                    ms.timestamp
-                  ).toLocaleTimeString([], {
+                  {new Date(ms.timestamp).toLocaleTimeString([], {
                     hour: "2-digit",
                     minute: "2-digit",
                   })}
@@ -295,18 +268,14 @@ export default function ChatView({
 
         {/* FOOTER */}
         <footer className="p-4 border-t border-outline-variant/10 bg-white">
-
           <div className="max-w-4xl mx-auto flex items-end gap-3 bg-surface-container-low border border-outline-variant/20 rounded-3xl px-3 py-2 shadow-sm">
-
             <button className="p-2 rounded-full hover:bg-surface-container-high transition">
               <PlusCircle className="w-5 h-5 text-on-surface-variant" />
             </button>
 
             <textarea
               value={inputText}
-              onChange={(e) =>
-                setInputText(e.target.value)
-              }
+              onChange={(e) => setInputText(e.target.value)}
               onKeyDown={(e) =>
                 e.key === "Enter" &&
                 !e.shiftKey &&
@@ -335,7 +304,6 @@ export default function ChatView({
             />
 
             <div className="flex items-center gap-1">
-
               <button className="p-2 rounded-full hover:bg-surface-container-high transition">
                 <Smile className="w-5 h-5 text-on-surface-variant" />
               </button>
@@ -357,9 +325,7 @@ export default function ChatView({
 
       {/* SIDEBAR */}
       <aside className="hidden lg:flex flex-col w-[300px] border-l border-outline-variant/10 bg-white p-6">
-
         <div className="flex flex-col items-center text-center">
-
           {recipient.photoURL ? (
             <img
               src={recipient.photoURL}
@@ -368,8 +334,7 @@ export default function ChatView({
             />
           ) : (
             <div className="w-24 h-24 rounded-full bg-primary flex items-center justify-center text-on-primary text-4xl font-bold mb-4">
-              {recipient.displayName?.charAt(0) ||
-                recipient.email?.charAt(0)}
+              {recipient.displayName?.charAt(0) || recipient.email?.charAt(0)}
             </div>
           )}
 
@@ -382,6 +347,11 @@ export default function ChatView({
           </p>
         </div>
       </aside>
+
+      {/* ======================================================== */}
+      {/* 🚀 THE BACKGROUND INTERPRETER BRIDGE CORE CONTROLLER */}
+      {/* ======================================================== */}
+      <VideoCallBridge roomId={roomId} socket={socket} />
     </div>
   );
 }
